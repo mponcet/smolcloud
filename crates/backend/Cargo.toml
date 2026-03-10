@@ -1,0 +1,14 @@
+[package]
+name = "backend"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum = { workspace = true, features = ["multipart"] }
+tower-service = { workspace = true }
+tracing = { workspace = true }
+bindings = { path = "../bindings" }
+worker = { workspace = true, optional = true }
+
+[features]
+cloudflare = [ "worker" ]

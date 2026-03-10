@@ -1,0 +1,20 @@
+[package]
+name = "backend-cloudflare"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = { workspace = true, features = ['http', 'axum', 'd1'] }
+worker-macros = { workspace = true, features = ['http'] }
+axum = { workspace = true }
+tower-service = { workspace = true }
+
+tracing-web = "0.1"
+tracing-subscriber = { workspace = true }
+time = { version = "0.3", features = ['wasm-bindgen'] }
+
+backend = { path = "../backend", features = ["cloudflare"] }
+bindings-cloudflare = { path = "../bindings-cloudflare" }

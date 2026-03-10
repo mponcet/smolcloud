@@ -1,0 +1,8 @@
+[package]
+name = "bindings-cloudflare"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+worker = { workspace = true }
+bindings = { path = "../bindings" }
