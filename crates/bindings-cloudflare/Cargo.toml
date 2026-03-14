@@ -5,4 +5,5 @@ edition.workspace = true
 
 [dependencies]
 worker = { workspace = true }
+worker-sys = { workspace = true }
 bindings = { path = "../bindings" }
