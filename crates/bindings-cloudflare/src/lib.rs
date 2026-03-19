@@ -93,7 +93,7 @@ impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
 
                     Ok(Some(BucketObject { key, body }))
                 }
-                Ok(None) => unreachable!(),
+                Ok(None) => Ok(None),
                 Err(e) => Err(BucketError {
                     message: "bucket get object failed".into(),
                     source: e.into(),
@@ -193,7 +193,7 @@ impl bindings::Bucket for R2 {
                     key: object.key(),
                     body: None,
                 })),
-                Ok(None) => unreachable!(),
+                Ok(None) => Ok(None),
                 Err(e) => Err(BucketError {
                     message: "bucket head object failed".into(),
                     source: e.into(),
