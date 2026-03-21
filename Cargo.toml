@@ -17,4 +17,3 @@ tower-service = "0.3.3"
 worker = { version = "0.7" }
 worker-sys = { version = "0.7" }
 worker-macros = { version = "0.7", features = ["http"] }
-askama = "0.14"

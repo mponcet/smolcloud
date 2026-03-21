@@ -5,16 +5,12 @@ edition.workspace = true
 
 [dependencies]
 thiserror = { workspace = true }
-axum = { workspace = true, features = ["form"] }
+axum = { workspace = true, features = ["json"] }
 serde = { version = "1.0" }
 tower-service = { workspace = true }
 tracing = { workspace = true }
 bindings = { path = "../bindings" }
 worker = { workspace = true, optional = true }
-askama = { workspace = true }
-
-[package.metadata.askama]
-template-path = "src/web/templates"
 
 [features]
 cloudflare = [ "worker" ]
