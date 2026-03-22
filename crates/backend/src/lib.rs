@@ -7,7 +7,7 @@ use routes::*;
 use services::notes::NoteService;
 
 use axum::Router;
-use axum::routing::{get, post, put};
+use axum::routing::{delete, get, post, put};
 
 pub fn router<B>(bindings: B) -> Router
 where
@@ -16,12 +16,10 @@ where
     let note_service = NoteService::new(bindings);
 
     Router::new()
-        .route("/", get(notes::root))
-        .route("/notes", get(notes::list_note::<B>))
-        .route("/notes/{id}", get(notes::get_note::<B>))
-        .route("/notes/{id}", put(notes::post_note::<B>))
-        .route("/notes/new", get(notes::new_note))
-        .route("/notes", post(notes::post_note::<B>))
-        .route("/notes/{id}/edit", get(notes::edit_note::<B>))
+        .route("/notes", get(notes::list::<B>))
+        .route("/notes/{id}", get(notes::get::<B>))
+        .route("/notes/{id}", put(notes::put::<B>))
+        .route("/notes", post(notes::post::<B>))
+        .route("/notes/{id}", delete(notes::delete::<B>))
         .with_state(note_service)
 }

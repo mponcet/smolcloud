@@ -1,84 +1,67 @@
 use crate::error::ApiError;
-use crate::models::notes::Note;
-use crate::routes::templates;
+use crate::models::notes::{Note, NoteId, NoteMetadata};
 use crate::services::notes::NoteService;
 use bindings::Bindings;
 
-use axum::Form;
+use axum::Json;
 use axum::extract::{Path, State};
-use axum::response::{Html, IntoResponse};
-use serde::Deserialize;
-
-pub async fn root() -> impl IntoResponse {
-    Html(templates::notes::root())
-}
+use axum::response::IntoResponse;
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn list_note<B>(State(service): State<NoteService<B>>) -> Result<Html<String>, ApiError>
-where
-    B: Bindings,
-{
-    service
-        .list()
-        .await
-        .map(|notes| Html(templates::notes::list(notes)))
-        .map_err(Into::into)
-}
-
-#[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn get_note<B>(
+pub async fn get<B>(
     State(service): State<NoteService<B>>,
-    Path(id): Path<u32>,
-) -> Result<impl IntoResponse, ApiError>
+    Path(id): Path<NoteId>,
+) -> Result<Json<Note>, ApiError>
 where
     B: Bindings,
 {
     service
         .get(id)
         .await
-        .map(|note| note.content)
-        .map_err(Into::into)
-}
-
-#[derive(Deserialize)]
-pub struct NoteForm {
-    name: String,
-    content: String,
+        .map(Json::from)
+        .map_err(ApiError::from)
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn post_note<B>(
+pub async fn list<B>(
     State(service): State<NoteService<B>>,
-    Form(form): Form<NoteForm>,
+) -> Result<Json<Vec<NoteMetadata>>, ApiError>
+where
+    B: Bindings,
+{
+    service.list().await.map(Json::from).map_err(ApiError::from)
+}
+
+#[cfg_attr(feature = "cloudflare", worker::send)]
+pub async fn post<B>(
+    State(service): State<NoteService<B>>,
+    Json(note): Json<Note>,
 ) -> Result<impl IntoResponse, ApiError>
 where
     B: Bindings,
 {
-    service
-        .create(Note {
-            name: form.name,
-            content: form.content,
-        })
-        .await
-        .map_err(Into::into)
+    service.create(note).await.map_err(ApiError::from)
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn new_note() -> impl IntoResponse {
-    Html(templates::notes::new())
-}
-
-#[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn edit_note<B>(
+pub async fn put<B>(
     State(service): State<NoteService<B>>,
-    Path(id): Path<u32>,
+    Path(id): Path<NoteId>,
+    Json(note): Json<Note>,
 ) -> Result<impl IntoResponse, ApiError>
 where
     B: Bindings,
 {
-    service
-        .get(id)
-        .await
-        .map(|note| templates::notes::edit(id, &note.content))
-        .map_err(Into::into)
+    service.update(id, note).await.map_err(ApiError::from)
+}
+
+#[cfg_attr(feature = "cloudflare", worker::send)]
+pub async fn delete<B>(
+    State(service): State<NoteService<B>>,
+    Path(id): Path<NoteId>,
+) -> Result<impl IntoResponse, ApiError>
+where
+    B: Bindings,
+{
+    service.delete(id).await.map_err(ApiError::from)
 }

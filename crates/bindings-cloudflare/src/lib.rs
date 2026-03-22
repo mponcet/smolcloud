@@ -1,12 +1,13 @@
-use worker::send::IntoSendFuture;
-
-use std::ops::Deref;
-use std::sync::Arc;
-
 use bindings::{
     BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
     BucketPutOptionsBuilder,
 };
+
+use std::sync::Arc;
+use std::{collections::HashMap, ops::Deref};
+
+use worker::Include;
+use worker::send::IntoSendFuture;
 
 #[derive(Clone)]
 pub struct CloudflareBindings {
@@ -90,8 +91,13 @@ impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
                     } else {
                         None
                     };
+                    let custom_metadata = object.custom_metadata().ok();
 
-                    Ok(Some(BucketObject { key, body }))
+                    Ok(Some(BucketObject {
+                        key,
+                        body,
+                        custom_metadata,
+                    }))
                 }
                 Ok(None) => Ok(None),
                 Err(e) => Err(BucketError {
@@ -109,23 +115,27 @@ struct CloudflarePutOptionsBuilder<'bucket> {
     bucket: &'bucket R2,
     key: String,
     data: Vec<u8>,
-    custom_metadata: Option<Vec<(String, String)>>,
+    custom_metadata: Option<HashMap<String, String>>,
 }
 
 impl<'bucket> bindings::BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<'bucket> {
-    fn custom_metadata(mut self, metadata: Vec<(String, String)>) -> Self {
+    fn custom_metadata(mut self, metadata: HashMap<String, String>) -> Self {
         self.custom_metadata = Some(metadata);
         self
     }
 
     async fn execute(self) -> Result<BucketObject, BucketError> {
-        let options = self.bucket.put(self.key, self.data);
-
         async move {
+            let mut options = self.bucket.put(self.key, self.data);
+            if let Some(custom_metadata) = self.custom_metadata {
+                options = options.custom_metadata(custom_metadata);
+            }
+
             match options.execute().await {
                 Ok(object) => Ok(BucketObject {
                     key: object.key(),
                     body: None,
+                    custom_metadata: object.custom_metadata().ok(),
                 }),
                 Err(e) => Err(BucketError {
                     message: "bucket put objet failed".into(),
@@ -142,6 +152,7 @@ struct CloudflareListOptionsBuilder<'bucket> {
     bucket: &'bucket R2,
     limit: Option<u32>,
     prefix: Option<String>,
+    custom_metadata: bool,
 }
 
 impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilder<'bucket> {
@@ -155,16 +166,24 @@ impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilde
         self
     }
 
-    async fn execute(self) -> Result<Vec<BucketObject>, BucketError> {
-        let mut options = self.bucket.list();
-        if let Some(limit) = self.limit {
-            options = options.limit(limit);
-        }
-        if let Some(prefix) = self.prefix {
-            options = options.prefix(prefix);
-        }
+    fn include_custom_metadata(mut self) -> Self {
+        self.custom_metadata = true;
+        self
+    }
 
+    async fn execute(self) -> Result<Vec<BucketObject>, BucketError> {
         async move {
+            let mut options = self.bucket.list();
+            if let Some(limit) = self.limit {
+                options = options.limit(limit);
+            }
+            if let Some(prefix) = self.prefix {
+                options = options.prefix(prefix);
+            }
+            if self.custom_metadata {
+                options = options.include(vec![Include::CustomMetadata]);
+            }
+
             match options.execute().await {
                 Ok(objects) => Ok(objects
                     .objects()
@@ -172,6 +191,7 @@ impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilde
                     .map(|object| BucketObject {
                         key: object.key(),
                         body: None,
+                        custom_metadata: object.custom_metadata().ok(),
                     })
                     .collect()),
                 Err(e) => Err(BucketError {
@@ -192,6 +212,7 @@ impl bindings::Bucket for R2 {
                 Ok(Some(object)) => Ok(Some(BucketObject {
                     key: object.key(),
                     body: None,
+                    custom_metadata: object.custom_metadata().ok(),
                 })),
                 Ok(None) => Ok(None),
                 Err(e) => Err(BucketError {
@@ -238,6 +259,7 @@ impl bindings::Bucket for R2 {
             bucket: self,
             limit: None,
             prefix: None,
+            custom_metadata: false,
         }
     }
 }

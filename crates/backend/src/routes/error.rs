@@ -1,8 +1,8 @@
+use crate::services::error::ServiceError;
+
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
-
-use crate::services::error::ServiceError;
 
 #[derive(Debug, Error)]
 #[error("api error")]
@@ -16,7 +16,7 @@ impl From<ServiceError> for ApiError {
             ServiceError::NotFound => Self {
                 status: StatusCode::NOT_FOUND,
             },
-            ServiceError::BucketError(_) => Self {
+            ServiceError::Bucket(_) | ServiceError::Internal => Self {
                 status: StatusCode::INTERNAL_SERVER_ERROR,
             },
         }

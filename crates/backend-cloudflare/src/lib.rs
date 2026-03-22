@@ -1,3 +1,6 @@
+use backend::router;
+use bindings_cloudflare::{CloudflareBindings, R2};
+
 use axum::body::Body;
 use axum::http::Response;
 use tower_service::Service;
@@ -7,9 +10,6 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_web::{MakeConsoleWriter, performance_layer};
 use worker::*;
-
-use backend::router;
-use bindings_cloudflare::{CloudflareBindings, R2};
 
 #[event(start)]
 fn start() {

@@ -11,6 +11,7 @@ tower-service = { workspace = true }
 tracing = { workspace = true }
 bindings = { path = "../bindings" }
 worker = { workspace = true, optional = true }
+uuid = { version = "1.22", features = ["serde", "v7", "js"] }
 
 [features]
 cloudflare = [ "worker" ]
