@@ -66,7 +66,7 @@ impl<B: Bindings> NoteService<B> {
             .bucket()
             .head(&id.to_string())
             .await
-            .map_err(|_| ServiceError::NotFound)?
+            .map_err(ServiceError::Bucket)?
             .is_none()
         {
             return Err(ServiceError::NotFound);
@@ -80,6 +80,7 @@ impl<B: Bindings> NoteService<B> {
             .execute()
             .await
             .map_err(ServiceError::Bucket)?;
+
         Ok(())
     }
 
@@ -93,17 +94,14 @@ impl<B: Bindings> NoteService<B> {
             .await
             .map_err(ServiceError::Bucket)?;
 
-        let notes = result
+        result
             .into_iter()
-            .filter_map(|ref object| {
-                let metadata = object.custom_metadata.as_ref()?;
-                let id = NoteId::try_parse(object.key()).ok()?;
-                let title = metadata.get("title")?.to_string();
-                Some(NoteMetadata::new(id, title))
+            .filter_map(|object| object.custom_metadata)
+            .map(|metadata| {
+                let metadata = NoteMetadata::try_from(metadata);
+                metadata.map_err(|_| ServiceError::Internal)
             })
-            .collect::<Vec<_>>();
-
-        Ok(notes)
+            .collect::<Result<Vec<_>, _>>()
     }
 
     pub async fn delete(&self, id: NoteId) -> Result<(), ServiceError> {

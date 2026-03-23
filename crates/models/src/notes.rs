@@ -31,3 +31,18 @@ impl From<NoteMetadata> for HashMap<String, String> {
         ])
     }
 }
+
+impl TryFrom<HashMap<String, String>> for NoteMetadata {
+    type Error = &'static str;
+
+    fn try_from(metadata: HashMap<String, String>) -> Result<Self, Self::Error> {
+        let id = metadata.get("id").ok_or("missing metadata id")?;
+        let id = NoteId::try_parse(id).map_err(|_| "could not parse uuid")?;
+        let title = metadata
+            .get("title")
+            .ok_or("missing title metadata")?
+            .to_string();
+
+        Ok(NoteMetadata::new(id, title))
+    }
+}
