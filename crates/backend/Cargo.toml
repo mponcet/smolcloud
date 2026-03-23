@@ -6,12 +6,11 @@ edition.workspace = true
 [dependencies]
 thiserror = { workspace = true }
 axum = { workspace = true, features = ["json"] }
-serde = { version = "1.0" }
 tower-service = { workspace = true }
 tracing = { workspace = true }
-bindings = { path = "../bindings" }
 worker = { workspace = true, optional = true }
-uuid = { version = "1.22", features = ["serde", "v7", "js"] }
+bindings = { path = "../bindings" }
+models = { path = "../models" }
 
 [features]
 cloudflare = [ "worker" ]

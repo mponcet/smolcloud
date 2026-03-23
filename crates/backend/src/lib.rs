@@ -1,4 +1,3 @@
-mod models;
 mod routes;
 mod services;
 

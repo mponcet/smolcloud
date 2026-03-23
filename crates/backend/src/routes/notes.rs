@@ -1,7 +1,7 @@
 use crate::error::ApiError;
-use crate::models::notes::{Note, NoteId, NoteMetadata};
 use crate::services::notes::NoteService;
 use bindings::Bindings;
+use models::notes::{Note, NoteId, NoteMetadata};
 
 use axum::Json;
 use axum::extract::{Path, State};
@@ -40,7 +40,11 @@ pub async fn post<B>(
 where
     B: Bindings,
 {
-    service.create(note).await.map_err(ApiError::from)
+    service
+        .create(note)
+        .await
+        .map(Json::from)
+        .map_err(ApiError::from)
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]

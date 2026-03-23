@@ -1,9 +1,9 @@
-use crate::models::notes::{Note, NoteId, NoteMetadata};
 use crate::services::error::ServiceError;
 use bindings::{
     Bindings, Bucket, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
     BucketPutOptionsBuilder,
 };
+use models::notes::{Note, NoteId, NoteMetadata};
 
 #[derive(Clone)]
 pub struct NoteService<B: Bindings> {
@@ -44,7 +44,7 @@ impl<B: Bindings> NoteService<B> {
         }
     }
 
-    pub async fn create(&self, note: Note) -> Result<(), ServiceError> {
+    pub async fn create(&self, note: Note) -> Result<NoteId, ServiceError> {
         let id = NoteId::now_v7();
         let metadata = NoteMetadata::new(id, note.title);
         let content = note.content.unwrap_or_default();
@@ -57,7 +57,7 @@ impl<B: Bindings> NoteService<B> {
             .await
             .map_err(ServiceError::Bucket)?;
 
-        Ok(())
+        Ok(id)
     }
 
     pub async fn update(&self, id: NoteId, note: Note) -> Result<(), ServiceError> {
@@ -93,7 +93,7 @@ impl<B: Bindings> NoteService<B> {
             .await
             .map_err(ServiceError::Bucket)?;
 
-        Ok(result
+        let notes = result
             .into_iter()
             .filter_map(|ref object| {
                 let metadata = object.custom_metadata.as_ref()?;
@@ -101,7 +101,9 @@ impl<B: Bindings> NoteService<B> {
                 let title = metadata.get("title")?.to_string();
                 Some(NoteMetadata::new(id, title))
             })
-            .collect())
+            .collect::<Vec<_>>();
+
+        Ok(notes)
     }
 
     pub async fn delete(&self, id: NoteId) -> Result<(), ServiceError> {
