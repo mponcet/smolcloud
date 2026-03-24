@@ -1,3 +1,4 @@
+use backend::config;
 use backend::router;
 use bindings_cloudflare::{CloudflareBindings, R2};
 
@@ -28,7 +29,7 @@ fn start() {
 
 #[event(fetch)]
 async fn fetch(req: HttpRequest, env: Env, _ctx: Context) -> Result<Response<Body>> {
-    let bucket: R2 = env.bucket("mybucket")?.into();
+    let bucket: R2 = env.bucket(config::BUCKET_NAME)?.into();
     let bindings = CloudflareBindings::new(bucket);
     Ok(router(bindings).call(req).await?)
 }

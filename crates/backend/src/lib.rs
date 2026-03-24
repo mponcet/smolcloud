@@ -1,3 +1,4 @@
+pub mod config;
 mod routes;
 mod services;
 
