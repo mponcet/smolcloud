@@ -44,6 +44,26 @@ impl<B: Bindings> NoteService<B> {
         }
     }
 
+    pub async fn get_all(&self) -> Result<Vec<NoteMetadata>, ServiceError> {
+        let result = self
+            .bindings
+            .bucket()
+            .list()
+            .include_custom_metadata()
+            .execute()
+            .await
+            .map_err(ServiceError::Bucket)?;
+
+        result
+            .into_iter()
+            .filter_map(|object| object.custom_metadata)
+            .map(|metadata| {
+                let metadata = NoteMetadata::try_from(metadata);
+                metadata.map_err(|_| ServiceError::Internal)
+            })
+            .collect::<Result<Vec<_>, _>>()
+    }
+
     pub async fn create(&self, note: Note) -> Result<NoteId, ServiceError> {
         let id = NoteId::now_v7();
         let metadata = NoteMetadata::new(id, note.title);
@@ -82,26 +102,6 @@ impl<B: Bindings> NoteService<B> {
             .map_err(ServiceError::Bucket)?;
 
         Ok(())
-    }
-
-    pub async fn list(&self) -> Result<Vec<NoteMetadata>, ServiceError> {
-        let result = self
-            .bindings
-            .bucket()
-            .list()
-            .include_custom_metadata()
-            .execute()
-            .await
-            .map_err(ServiceError::Bucket)?;
-
-        result
-            .into_iter()
-            .filter_map(|object| object.custom_metadata)
-            .map(|metadata| {
-                let metadata = NoteMetadata::try_from(metadata);
-                metadata.map_err(|_| ServiceError::Internal)
-            })
-            .collect::<Result<Vec<_>, _>>()
     }
 
     pub async fn delete(&self, id: NoteId) -> Result<(), ServiceError> {

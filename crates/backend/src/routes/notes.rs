@@ -23,17 +23,21 @@ where
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn list<B>(
+pub async fn get_all<B>(
     State(service): State<NoteService<B>>,
 ) -> Result<Json<Vec<NoteMetadata>>, ApiError>
 where
     B: Bindings,
 {
-    service.list().await.map(Json::from).map_err(ApiError::from)
+    service
+        .get_all()
+        .await
+        .map(Json::from)
+        .map_err(ApiError::from)
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn post<B>(
+pub async fn create<B>(
     State(service): State<NoteService<B>>,
     Json(note): Json<Note>,
 ) -> Result<impl IntoResponse, ApiError>
@@ -48,7 +52,7 @@ where
 }
 
 #[cfg_attr(feature = "cloudflare", worker::send)]
-pub async fn put<B>(
+pub async fn update<B>(
     State(service): State<NoteService<B>>,
     Path(id): Path<NoteId>,
     Json(note): Json<Note>,

@@ -16,10 +16,10 @@ where
     let note_service = NoteService::new(bindings);
 
     Router::new()
-        .route("/notes", get(notes::list::<B>))
+        .route("/notes", get(notes::get_all::<B>))
         .route("/notes/{id}", get(notes::get::<B>))
-        .route("/notes/{id}", put(notes::put::<B>))
-        .route("/notes", post(notes::post::<B>))
+        .route("/notes/{id}", put(notes::update::<B>))
+        .route("/notes", post(notes::create::<B>))
         .route("/notes/{id}", delete(notes::delete::<B>))
         .with_state(note_service)
 }
