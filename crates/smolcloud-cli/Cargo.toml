@@ -1,0 +1,11 @@
+[package]
+name = "smolcloud-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+models = { path = "../models" }
+smolcloud-api = { path = "../smolcloud-api" }
+clap = { version = "4.6.0", features = ["derive"] }

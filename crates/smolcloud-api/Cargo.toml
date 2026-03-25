@@ -1,0 +1,9 @@
+[package]
+name = "smolcloud-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+models = { path = "../models" }
