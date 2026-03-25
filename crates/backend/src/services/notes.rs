@@ -36,8 +36,13 @@ impl<B: Bindings> NoteService<B> {
                 .get("title")
                 .ok_or(ServiceError::Internal)?
                 .clone();
-            let content =
-                body.map(|b| String::from_utf8(b).expect("note should be a valid utf8 string"));
+            let content = body.and_then(|b| {
+                String::from_utf8(b)
+                    .map_err(|e| {
+                        tracing::debug!("invalid note content: {e}");
+                    })
+                    .ok()
+            });
             Ok(Note { title, content })
         } else {
             Err(ServiceError::NotFound)
