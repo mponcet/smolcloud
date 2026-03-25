@@ -54,14 +54,19 @@ impl<B: Bindings> NoteService<B> {
             .await
             .map_err(ServiceError::Bucket)?;
 
-        result
+        Ok(result
             .into_iter()
-            .filter_map(|object| object.custom_metadata)
-            .map(|metadata| {
-                let metadata = NoteMetadata::try_from(metadata);
-                metadata.map_err(|_| ServiceError::Internal)
+            .filter_map(|object| {
+                let metadata = object.custom_metadata?;
+                match NoteMetadata::try_from(metadata) {
+                    Ok(metadata) => Some(metadata),
+                    Err(e) => {
+                        tracing::debug!("object '{}': {e}", object.key);
+                        None
+                    }
+                }
             })
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<Vec<_>>())
     }
 
     pub async fn create(&self, note: Note) -> Result<NoteId, ServiceError> {
