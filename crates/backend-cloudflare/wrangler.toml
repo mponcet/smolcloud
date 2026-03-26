@@ -8,3 +8,7 @@ command = "cargo install -q \"worker-build@^0.7\" && worker-build --release"
 [[r2_buckets]]
 binding = "mybucket"
 bucket_name = "mybucket"
+
+[[kv_namespaces]]
+binding = "mykv"
+id = "mykv"
