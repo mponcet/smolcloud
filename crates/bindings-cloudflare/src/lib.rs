@@ -3,6 +3,7 @@ mod kv;
 
 pub use crate::bucket::R2;
 pub use crate::kv::KV;
+pub use bindings::{SecretError, SecretFn};
 
 use std::sync::Arc;
 
@@ -14,19 +15,20 @@ pub struct CloudflareBindings {
 struct CloudflareBindingsInner {
     r2: R2,
     kv: KV,
+    secret: Box<SecretFn>,
 }
 
 impl CloudflareBindings {
-    pub fn new(r2: R2, kv: KV) -> Self {
+    pub fn new(r2: R2, kv: KV, secret: Box<SecretFn>) -> Self {
         Self {
-            inner: Arc::new(CloudflareBindingsInner::new(r2, kv)),
+            inner: Arc::new(CloudflareBindingsInner::new(r2, kv, secret)),
         }
     }
 }
 
 impl CloudflareBindingsInner {
-    pub fn new(r2: R2, kv: KV) -> CloudflareBindingsInner {
-        Self { r2, kv }
+    pub fn new(r2: R2, kv: KV, secret: Box<SecretFn>) -> CloudflareBindingsInner {
+        Self { r2, kv, secret }
     }
 }
 
@@ -39,6 +41,10 @@ impl bindings::Bindings for CloudflareBindings {
     type K = KV;
     fn kv(&self) -> &Self::K {
         &self.inner.kv
+    }
+
+    fn secret(&self, name: &str) -> Result<String, SecretError> {
+        (self.inner.secret)(name)
     }
 }
 
