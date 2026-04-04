@@ -1,9 +1,9 @@
 mod bucket;
 mod kv;
 
-pub use crate::bucket::R2;
-pub use crate::kv::KV;
-pub use bindings::{SecretError, SecretFn};
+pub use bindings::{SecretError, SecretFn, SecretString};
+pub use bucket::R2;
+pub use kv::KV;
 
 use std::sync::Arc;
 
@@ -43,7 +43,7 @@ impl bindings::Bindings for CloudflareBindings {
         &self.inner.kv
     }
 
-    fn secret(&self, name: &str) -> Result<String, SecretError> {
+    fn secret(&self, name: &str) -> Result<SecretString, SecretError> {
         (self.inner.secret)(name)
     }
 }

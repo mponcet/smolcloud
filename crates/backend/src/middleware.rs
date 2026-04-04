@@ -1,4 +1,4 @@
-use bindings::Bindings;
+use bindings::{Bindings, ExposeSecret, SecretString};
 
 use std::time::Duration;
 
@@ -73,12 +73,12 @@ where
     };
 
     let (_, token) = auth_header.split_once(' ').ok_or(AuthError::JwtNotFound)?;
-    decode_jwt(token, &jwt_secret)?;
+    decode_jwt(token, jwt_secret)?;
 
     Ok(next.run(req).await)
 }
 
-fn encode_jwt(user: String, secret: &str) -> Result<String, AuthError> {
+fn encode_jwt(user: String, secret: SecretString) -> Result<String, AuthError> {
     let now = UtcDateTime::now().unix_timestamp() as u64;
     let expire = now + Duration::from_hours(1).as_secs();
 
@@ -91,15 +91,15 @@ fn encode_jwt(user: String, secret: &str) -> Result<String, AuthError> {
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
+        &EncodingKey::from_secret(secret.expose_secret().as_bytes()),
     )
     .map_err(AuthError::Jwt)
 }
 
-fn decode_jwt(jwt: &str, secret: &str) -> Result<Claims, AuthError> {
+fn decode_jwt(jwt: &str, secret: SecretString) -> Result<Claims, AuthError> {
     let token_data = decode(
         jwt,
-        &DecodingKey::from_secret(secret.as_bytes()),
+        &DecodingKey::from_secret(secret.expose_secret().as_bytes()),
         &Validation::default(),
     )
     .map_err(AuthError::Jwt)?;

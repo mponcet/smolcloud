@@ -33,7 +33,7 @@ async fn fetch(req: HttpRequest, env: Env, _ctx: Context) -> Result<Response<Bod
     let kv: KV = env.kv(config::KV_NAME)?.into();
     let secret: Box<SecretFn> = Box::new(move |name| {
         env.secret(name)
-            .map(|s| s.to_string())
+            .map(|s| s.to_string().into())
             .map_err(|e| SecretError {
                 message: format!("failed to get secret '{name}'"),
                 source: e.into(),

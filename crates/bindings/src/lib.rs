@@ -9,6 +9,8 @@ pub use bucket::{
 pub use kv::{KvError, KvStore};
 pub use secret::{SecretError, SecretFn};
 
+pub use secrecy::{ExposeSecret, SecretString};
+
 pub trait Bindings: Clone + Send + Sync + 'static {
     type B: Bucket;
     fn bucket(&self) -> &Self::B;
@@ -16,5 +18,5 @@ pub trait Bindings: Clone + Send + Sync + 'static {
     type K: KvStore;
     fn kv(&self) -> &Self::K;
 
-    fn secret(&self, name: &str) -> Result<String, SecretError>;
+    fn secret(&self, name: &str) -> Result<SecretString, SecretError>;
 }
