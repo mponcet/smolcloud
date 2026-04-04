@@ -12,6 +12,7 @@ worker-macros = { workspace = true, features = ['http'] }
 axum = { workspace = true }
 tower-service = { workspace = true }
 
+tracing = { workspace = true }
 tracing-web = "0.1"
 tracing-subscriber = { workspace = true }
 time = { version = "0.3", features = ['wasm-bindgen'] }

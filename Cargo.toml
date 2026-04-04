@@ -15,6 +15,7 @@ tracing-subscriber = { version = "0.3", features = ["time", "json"] }
 
 axum = { version = "0.8", default-features = false }
 tower-service = "0.3.3"
+serde = { version = "1.0" }
 worker = { version = "0.7" }
 worker-sys = { version = "0.7" }
 worker-macros = { version = "0.7", features = ["http"] }

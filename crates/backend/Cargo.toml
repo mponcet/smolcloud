@@ -4,13 +4,22 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
 thiserror = { workspace = true }
 axum = { workspace = true, features = ["json"] }
 tower-service = { workspace = true }
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+time = { version = "0.3" }
+serde = { workspace = true }
 tracing = { workspace = true }
 worker = { workspace = true, optional = true }
 bindings = { path = "../bindings" }
 models = { path = "../models" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
+time = { version = "0.3", features = ["wasm-bindgen"] }
 
 [features]
 cloudflare = [ "worker" ]
