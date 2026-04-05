@@ -31,15 +31,17 @@ where
     let middleware_state = MiddlewareState::new(bindings.clone());
     let note_service = NoteService::new(bindings);
 
-    Router::new()
-        .route("/notes", get(notes::get_all::<B>))
-        .route("/notes/{id}", get(notes::get::<B>))
-        .route("/notes/{id}", put(notes::update::<B>))
-        .route("/notes", post(notes::create::<B>))
-        .route("/notes/{id}", delete(notes::delete::<B>))
+    let notes_router = Router::new()
+        .route("/", get(notes::get_all::<B>))
+        .route("/{id}", get(notes::get::<B>))
+        .route("/{id}", put(notes::update::<B>))
+        .route("/", post(notes::create::<B>))
+        .route("/{id}", delete(notes::delete::<B>))
         .layer(axum::middleware::from_fn_with_state(
             middleware_state,
             middleware::auth,
         ))
-        .with_state(note_service)
+        .with_state(note_service);
+
+    Router::new().nest("/notes", notes_router)
 }
