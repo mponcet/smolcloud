@@ -18,7 +18,11 @@ where
     let (mut parts, body) = req.into_parts();
     let jwt = ExtractAccessToken::from_request_parts(&mut parts, &bindings).await?;
 
-    tracing::debug!("jwt: {:?}", jwt.0);
+    tracing::debug!(
+        subject = jwt.0.sub,
+        iat = ?time::UtcDateTime::from_unix_timestamp(i64::try_from(jwt.0.iat).unwrap()).unwrap(),
+        exp = ?time::UtcDateTime::from_unix_timestamp(i64::try_from(jwt.0.exp).unwrap()).unwrap()
+    );
 
     let req = Request::from_parts(parts, body);
     Ok(next.run(req).await)
