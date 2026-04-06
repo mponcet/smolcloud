@@ -5,4 +5,4 @@ edition.workspace = true
 
 [dependencies]
 serde = { workspace = true }
-uuid = { version = "1.22", features = ["serde", "v7", "js"] }
+uuid = { workspace = true, features = ["serde", "v7", "js"] }

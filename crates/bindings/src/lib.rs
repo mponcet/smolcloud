@@ -15,7 +15,7 @@ pub trait Bindings: Clone + Send + Sync + 'static {
     type B: Bucket;
     fn bucket(&self) -> &Self::B;
 
-    type K: KvStore + Send + Sync;
+    type K: KvStore;
     fn kv(&self) -> &Self::K;
 
     fn secret(&self, name: &str) -> Result<SecretString, SecretError>;

@@ -1,10 +1,11 @@
 pub mod config;
+mod extract;
+mod jwt;
 mod middleware;
 mod routes;
 mod services;
 
 use bindings::Bindings;
-use middleware::MiddlewareState;
 use routes::*;
 use services::notes::NoteService;
 
@@ -28,8 +29,12 @@ pub fn router<B>(bindings: B) -> Router
 where
     B: Bindings,
 {
-    let middleware_state = MiddlewareState::new(bindings.clone());
-    let note_service = NoteService::new(bindings);
+    let note_service = NoteService::new(bindings.clone());
+
+    let auth_router = Router::new()
+        .route("/login", post(auth::login::<B>))
+        .route("/refresh_token", post(auth::refresh_token::<B>))
+        .with_state(bindings.clone());
 
     let notes_router = Router::new()
         .route("/", get(notes::get_all::<B>))
@@ -38,10 +43,12 @@ where
         .route("/", post(notes::create::<B>))
         .route("/{id}", delete(notes::delete::<B>))
         .layer(axum::middleware::from_fn_with_state(
-            middleware_state,
-            middleware::auth,
+            bindings,
+            middleware::auth::<B>,
         ))
         .with_state(note_service);
 
-    Router::new().nest("/notes", notes_router)
+    Router::new()
+        .nest("/auth", auth_router)
+        .nest("/notes", notes_router)
 }
