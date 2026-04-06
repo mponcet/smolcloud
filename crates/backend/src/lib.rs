@@ -44,7 +44,7 @@ where
         .route("/{id}", delete(notes::delete::<B>))
         .layer(axum::middleware::from_fn_with_state(
             bindings,
-            middleware::auth::<B>,
+            middleware::jwt_auth::<B>,
         ))
         .with_state(note_service);
 

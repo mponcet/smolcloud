@@ -7,7 +7,7 @@ use axum::extract::{FromRequestParts, State};
 use axum::middleware::Next;
 use axum::response::IntoResponse;
 
-pub async fn auth<B>(
+pub async fn jwt_auth<B>(
     State(bindings): State<B>,
     req: Request,
     next: Next,
