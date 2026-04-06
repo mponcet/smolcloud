@@ -45,7 +45,7 @@ impl BucketObject {
     }
 }
 
-pub trait Bucket {
+pub trait Bucket: Send + Sync {
     fn head(
         &self,
         key: &str,
