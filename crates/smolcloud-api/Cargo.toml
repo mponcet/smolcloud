@@ -6,4 +6,5 @@ edition.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 reqwest = { workspace = true }
+secrecy = { workspace = true }
 models = { path = "../models" }

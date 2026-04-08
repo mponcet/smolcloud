@@ -6,4 +6,4 @@ edition.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-secrecy = { version = "0.10" }
+secrecy = { workspace = true }

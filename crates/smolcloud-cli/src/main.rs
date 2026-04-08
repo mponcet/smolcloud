@@ -8,6 +8,12 @@ use clap::{Args, Parser, Subcommand};
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
+    #[arg(long)]
+    url: String,
+    #[arg(short, long)]
+    username: String,
+    #[arg(short, long)]
+    password: String,
     #[command(subcommand)]
     command: Commands,
 }
@@ -48,7 +54,9 @@ struct DeleteArgs {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let client = BaseClient::try_new("http://localhost:8787")?;
+    let client = BaseClient::try_new(&cli.url)?
+        .login(cli.username, cli.password)
+        .await?;
     let api = client.notes_api();
 
     match &cli.command {
