@@ -16,12 +16,12 @@
 use crate::extract::jwt::ExtractRefreshToken;
 use crate::jwt::{Audience, Claims};
 use bindings::{Bindings, ExposeSecret, KvError, KvStore, SecretError};
+use models::login::{LoginRequest, LoginResponse, TokenType};
 
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -49,25 +49,12 @@ impl IntoResponse for AuthError {
             AuthError::Secret(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AuthError::KvStore(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AuthError::Jwt(_) => StatusCode::UNAUTHORIZED,
-            AuthError::JwtNotFound => StatusCode::BAD_REQUEST,
+            AuthError::JwtNotFound => StatusCode::UNAUTHORIZED,
             AuthError::JwtRevoked => StatusCode::UNAUTHORIZED,
             AuthError::Other(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
         .into_response()
     }
-}
-
-#[derive(Deserialize)]
-pub struct LoginRequest {
-    username: String,
-    password: String,
-}
-
-#[derive(Serialize)]
-pub struct LoginResponse {
-    access_token: String,
-    refresh_token: String,
-    token_type: &'static str,
 }
 
 pub async fn login<B>(
@@ -102,7 +89,7 @@ where
         let response = LoginResponse {
             access_token: access_jwt,
             refresh_token: refresh_jwt,
-            token_type: "Bearer",
+            token_type: TokenType::Bearer,
         };
         Ok(Json(response))
     } else {
@@ -137,7 +124,7 @@ where
     let response = LoginResponse {
         access_token: access_jwt,
         refresh_token: refresh_jwt,
-        token_type: "Bearer",
+        token_type: TokenType::Bearer,
     };
 
     // Blacklist previous refresh token.
