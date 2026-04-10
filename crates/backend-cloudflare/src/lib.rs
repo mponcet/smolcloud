@@ -1,6 +1,8 @@
 use backend::config;
 use backend::router;
-use bindings_cloudflare::{CloudflareBindings, KV, R2, SecretError, SecretFn};
+use bindings_cloudflare::{
+    CloudflareBindings, CloudflareBucket, CloudflareKv, SecretError, SecretFn,
+};
 
 use axum::body::Body;
 use axum::http::Response;
@@ -29,8 +31,8 @@ fn start() {
 
 #[event(fetch)]
 async fn fetch(req: HttpRequest, env: Env, _ctx: Context) -> Result<Response<Body>> {
-    let bucket: R2 = env.bucket(config::BUCKET_NAME)?.into();
-    let kv: KV = env.kv(config::KV_NAME)?.into();
+    let bucket: CloudflareBucket = env.bucket(config::BUCKET_NAME)?.into();
+    let kv: CloudflareKv = env.kv(config::KV_NAME)?.into();
     let secret: Box<SecretFn> = Box::new(move |name| {
         env.secret(name)
             .map(|s| s.to_string().into())

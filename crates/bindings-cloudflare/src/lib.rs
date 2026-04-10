@@ -2,8 +2,8 @@ mod bucket;
 mod kv;
 
 pub use bindings::{SecretError, SecretFn, SecretString};
-pub use bucket::R2;
-pub use kv::KV;
+pub use bucket::CloudflareBucket;
+pub use kv::CloudflareKv;
 
 use std::sync::Arc;
 
@@ -13,13 +13,13 @@ pub struct CloudflareBindings {
 }
 
 struct CloudflareBindingsInner {
-    r2: R2,
-    kv: KV,
+    r2: CloudflareBucket,
+    kv: CloudflareKv,
     secret: Box<SecretFn>,
 }
 
 impl CloudflareBindings {
-    pub fn new(r2: R2, kv: KV, secret: Box<SecretFn>) -> Self {
+    pub fn new(r2: CloudflareBucket, kv: CloudflareKv, secret: Box<SecretFn>) -> Self {
         Self {
             inner: Arc::new(CloudflareBindingsInner::new(r2, kv, secret)),
         }
@@ -27,18 +27,22 @@ impl CloudflareBindings {
 }
 
 impl CloudflareBindingsInner {
-    pub fn new(r2: R2, kv: KV, secret: Box<SecretFn>) -> CloudflareBindingsInner {
+    pub fn new(
+        r2: CloudflareBucket,
+        kv: CloudflareKv,
+        secret: Box<SecretFn>,
+    ) -> CloudflareBindingsInner {
         Self { r2, kv, secret }
     }
 }
 
 impl bindings::Bindings for CloudflareBindings {
-    type B = R2;
+    type B = CloudflareBucket;
     fn bucket(&self) -> &Self::B {
         &self.inner.r2
     }
 
-    type K = KV;
+    type K = CloudflareKv;
     fn kv(&self) -> &Self::K {
         &self.inner.kv
     }
@@ -48,13 +52,13 @@ impl bindings::Bindings for CloudflareBindings {
     }
 }
 
-impl From<worker::Bucket> for R2 {
-    fn from(bucket: worker::Bucket) -> R2 {
+impl From<worker::Bucket> for CloudflareBucket {
+    fn from(bucket: worker::Bucket) -> CloudflareBucket {
         Self(bucket)
     }
 }
 
-impl From<worker::kv::KvStore> for KV {
+impl From<worker::kv::KvStore> for CloudflareKv {
     fn from(value: worker::kv::KvStore) -> Self {
         Self(value)
     }

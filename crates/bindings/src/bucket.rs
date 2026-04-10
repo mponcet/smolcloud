@@ -56,27 +56,27 @@ pub trait Bucket: Send + Sync {
     fn list(&self) -> impl BucketListOptionsBuilder;
 }
 
-impl<B: Bucket + ?Sized> Bucket for &B {
-    fn head(
-        &self,
-        key: &str,
-    ) -> impl Future<Output = Result<Option<BucketObject>, BucketError>> + Send {
-        (*self).head(key)
-    }
-
-    fn get(&self, key: &str) -> impl BucketGetOptionsBuilder {
-        (*self).get(key)
-    }
-
-    fn put(&self, key: &str, data: &[u8]) -> impl BucketPutOptionsBuilder {
-        (*self).put(key, data)
-    }
-
-    fn delete(&self, key: &str) -> impl Future<Output = Result<(), BucketError>> + Send {
-        (*self).delete(key)
-    }
-
-    fn list(&self) -> impl BucketListOptionsBuilder {
-        (*self).list()
-    }
-}
+// impl<B: Bucket + ?Sized> Bucket for &B {
+//     fn head(
+//         &self,
+//         key: &str,
+//     ) -> impl Future<Output = Result<Option<BucketObject>, BucketError>> + Send {
+//         (*self).head(key)
+//     }
+//
+//     fn get(&self, key: &str) -> impl BucketGetOptionsBuilder {
+//         (*self).get(key)
+//     }
+//
+//     fn put(&self, key: &str, data: &[u8]) -> impl BucketPutOptionsBuilder {
+//         (*self).put(key, data)
+//     }
+//
+//     fn delete(&self, key: &str) -> impl Future<Output = Result<(), BucketError>> + Send {
+//         (*self).delete(key)
+//     }
+//
+//     fn list(&self) -> impl BucketListOptionsBuilder {
+//         (*self).list()
+//     }
+// }

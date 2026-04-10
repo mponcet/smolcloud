@@ -10,11 +10,10 @@
 // issue a new token pair: re-authenfication is required.
 // TODO:
 // - password hashing
-// - kv store flushing, ttl on expired tokens
 // - use a different secret for access and refresh token
 use crate::extract::jwt::ExtractRefreshToken;
 use crate::jwt::{Audience, Claims};
-use bindings::{Bindings, ExposeSecret, KvError, KvStore, SecretError};
+use bindings::{Bindings, ExposeSecret, KvError, KvPutOptionsBuilder, KvStore, SecretError};
 use models::login::{LoginRequest, LoginResponse, TokenType};
 
 use axum::Json;
@@ -88,9 +87,10 @@ where
             .map_err(AuthError::Jwt)?;
 
         // Whitelist refresh token.
-        // TODO: set expiration ttl
         let kv = bindings.kv();
         kv.put(&refresh_jwt_claims.jti, &[])
+            .expiration(refresh_jwt_claims.exp)
+            .execute()
             .await
             .map_err(AuthError::KvStore)?;
 
@@ -142,8 +142,9 @@ where
     };
 
     // Whitelist new refresh token.
-    // TODO: set expiration ttl
     kv.put(&new_refresh_jwt_claims.jti, &[])
+        .expiration(new_refresh_jwt_claims.exp)
+        .execute()
         .await
         .map_err(AuthError::KvStore)?;
 

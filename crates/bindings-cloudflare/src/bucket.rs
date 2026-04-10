@@ -1,5 +1,5 @@
 use bindings::{
-    BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
+    Bucket, BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
     BucketPutOptionsBuilder,
 };
 
@@ -9,20 +9,12 @@ use worker::Include;
 use worker::send::IntoSendFuture;
 
 struct CloudflareGetOptionsBuilder<'bucket> {
-    bucket: &'bucket R2,
+    bucket: &'bucket CloudflareBucket,
     key: String,
     range: Option<std::ops::Range<usize>>,
 }
 
-pub struct R2(pub worker::Bucket);
-
-impl std::ops::Deref for R2 {
-    type Target = worker::Bucket;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+pub struct CloudflareBucket(pub worker::Bucket);
 
 impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
     fn range(mut self, range: std::ops::Range<usize>) -> Self {
@@ -31,7 +23,7 @@ impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
     }
 
     async fn execute(self) -> Result<Option<BucketObject>, BucketError> {
-        let mut options = self.bucket.get(self.key);
+        let mut options = self.bucket.0.get(self.key);
         if let Some(range) = self.range {
             // FIXME: invalid range
             options = options.range(
@@ -75,13 +67,13 @@ impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
 }
 
 struct CloudflarePutOptionsBuilder<'bucket> {
-    bucket: &'bucket R2,
+    bucket: &'bucket CloudflareBucket,
     key: String,
     data: Vec<u8>,
     custom_metadata: Option<HashMap<String, String>>,
 }
 
-impl<'bucket> bindings::BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<'bucket> {
+impl<'bucket> BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<'bucket> {
     fn custom_metadata(mut self, metadata: HashMap<String, String>) -> Self {
         self.custom_metadata = Some(metadata);
         self
@@ -89,7 +81,7 @@ impl<'bucket> bindings::BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<
 
     async fn execute(self) -> Result<BucketObject, BucketError> {
         async move {
-            let mut options = self.bucket.put(self.key, self.data);
+            let mut options = self.bucket.0.put(self.key, self.data);
             if let Some(custom_metadata) = self.custom_metadata {
                 options = options.custom_metadata(custom_metadata);
             }
@@ -112,13 +104,13 @@ impl<'bucket> bindings::BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<
 }
 
 struct CloudflareListOptionsBuilder<'bucket> {
-    bucket: &'bucket R2,
+    bucket: &'bucket CloudflareBucket,
     limit: Option<u32>,
     prefix: Option<String>,
     custom_metadata: bool,
 }
 
-impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilder<'bucket> {
+impl<'bucket> BucketListOptionsBuilder for CloudflareListOptionsBuilder<'bucket> {
     fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);
         self
@@ -136,7 +128,7 @@ impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilde
 
     async fn execute(self) -> Result<Vec<BucketObject>, BucketError> {
         async move {
-            let mut options = self.bucket.list();
+            let mut options = self.bucket.0.list();
             if let Some(limit) = self.limit {
                 options = options.limit(limit);
             }
@@ -168,7 +160,7 @@ impl<'bucket> bindings::BucketListOptionsBuilder for CloudflareListOptionsBuilde
     }
 }
 
-impl bindings::Bucket for R2 {
+impl Bucket for CloudflareBucket {
     async fn head(&self, key: &str) -> Result<Option<BucketObject>, BucketError> {
         async move {
             match self.0.head(key).await {

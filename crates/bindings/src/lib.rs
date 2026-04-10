@@ -6,7 +6,7 @@ pub use bucket::{
     Bucket, BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
     BucketPutOptionsBuilder,
 };
-pub use kv::{KvError, KvStore};
+pub use kv::{KvError, KvStore, KvPutOptionsBuilder};
 pub use secret::{SecretError, SecretFn};
 
 pub use secrecy::{ExposeSecret, SecretString};
