@@ -9,7 +9,6 @@
 // 6. If R1 is reused, both R1 and R2 are invalidated. The (legitimate) client can't use R2 to
 // issue a new token pair: re-authenfication is required.
 // TODO:
-// - if a token is re-used, blacklist this token and those issued after
 // - password hashing
 // - kv store flushing, ttl on expired tokens
 // - use a different secret for access and refresh token
@@ -83,9 +82,18 @@ where
         let access_jwt = Claims::new(Audience::Access, username.clone())
             .encode(&jwt_secret)
             .map_err(AuthError::Jwt)?;
-        let refresh_jwt = Claims::new(Audience::Refresh, username)
+        let refresh_jwt_claims = Claims::new(Audience::Refresh, username);
+        let refresh_jwt = refresh_jwt_claims
             .encode(&jwt_secret)
             .map_err(AuthError::Jwt)?;
+
+        // Whitelist refresh token.
+        // TODO: set expiration ttl
+        let kv = bindings.kv();
+        kv.put(&refresh_jwt_claims.jti, &[])
+            .await
+            .map_err(AuthError::KvStore)?;
+
         let response = LoginResponse {
             access_token: access_jwt,
             refresh_token: refresh_jwt,
@@ -110,25 +118,34 @@ where
         AuthError::Secret(e)
     })?;
 
-    if let Some(_child_jwt) = kv.get(&claims.jti).await.map_err(AuthError::KvStore)? {
-        // Token is being re-used !
+    // Remove refresh token from whitelist.
+    // FIXME: potential race condition. Two refresh tokens could be issued simultaneously
+    // if two concurrent requests check the whitelist at the same time.
+    // On Cloudflare, calling `delete()` on a non-existing key is a successful operation
+    // so it won't prevent the race condition.
+    if kv.get(&claims.jti).await?.is_none() {
         return Err(AuthError::JwtRevoked);
     }
+    kv.delete(&claims.jti).await.map_err(AuthError::KvStore)?;
 
-    let access_jwt = Claims::new(Audience::Access, claims.sub.clone())
+    let new_access_jwt = Claims::new(Audience::Access, claims.sub.clone())
         .encode(&jwt_secret)
         .map_err(AuthError::Jwt)?;
-    let refresh_jwt = Claims::new(Audience::Refresh, claims.sub)
+    let new_refresh_jwt_claims = Claims::new(Audience::Refresh, claims.sub);
+    let new_refresh_jwt = new_refresh_jwt_claims
         .encode(&jwt_secret)
         .map_err(AuthError::Jwt)?;
     let response = LoginResponse {
-        access_token: access_jwt,
-        refresh_token: refresh_jwt,
+        access_token: new_access_jwt,
+        refresh_token: new_refresh_jwt,
         token_type: TokenType::Bearer,
     };
 
-    // Blacklist previous refresh token.
-    // TODO: set ttl, store the jti of newer token (chain old and new token) for future revocation.
-    kv.put(&claims.jti, &[]).await.map_err(AuthError::KvStore)?;
+    // Whitelist new refresh token.
+    // TODO: set expiration ttl
+    kv.put(&new_refresh_jwt_claims.jti, &[])
+        .await
+        .map_err(AuthError::KvStore)?;
+
     Ok(Json(response))
 }
