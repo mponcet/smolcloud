@@ -8,8 +8,6 @@
 // 5. Refresh token R1 is invalidated (added to a blacklist).
 // 6. If R1 is reused, both R1 and R2 are invalidated. The (legitimate) client can't use R2 to
 // issue a new token pair: re-authenfication is required.
-// TODO:
-// - use a different secret for access and refresh token
 use crate::extract::jwt::ExtractRefreshToken;
 use crate::jwt::{Audience, Claims};
 use argon2::password_hash::{Encoding, PasswordHash};
@@ -71,8 +69,12 @@ where
         tracing::error!("PASSWORD secret is missing");
         AuthError::Secret(e)
     })?;
-    let jwt_secret = bindings.secret("JWT_SECRET").map_err(|e| {
-        tracing::error!("JWT_SECRET is missing");
+    let access_jwt_secret = bindings.secret("ACCESS_JWT_SECRET").map_err(|e| {
+        tracing::error!("ACCESS_JWT_SECRET is missing");
+        AuthError::Secret(e)
+    })?;
+    let refresh_jwt_secret = bindings.secret("REFRESH_JWT_SECRET").map_err(|e| {
+        tracing::error!("REFRESH_JWT_SECRET is missing");
         AuthError::Secret(e)
     })?;
 
@@ -86,11 +88,11 @@ where
             .is_ok()
     {
         let access_jwt = Claims::new(Audience::Access, req.username.clone())
-            .encode(&jwt_secret)
+            .encode(&access_jwt_secret)
             .map_err(AuthError::Jwt)?;
         let refresh_jwt_claims = Claims::new(Audience::Refresh, req.username);
         let refresh_jwt = refresh_jwt_claims
-            .encode(&jwt_secret)
+            .encode(&refresh_jwt_secret)
             .map_err(AuthError::Jwt)?;
 
         // Whitelist refresh token.
@@ -120,8 +122,8 @@ where
     B: Bindings,
 {
     let kv = bindings.kv();
-    let jwt_secret = bindings.secret("JWT_SECRET").map_err(|e| {
-        tracing::error!("JWT_SECRET is missing");
+    let refresh_jwt_secret = bindings.secret("REFRESH_JWT_SECRET").map_err(|e| {
+        tracing::error!("REFRESH_JWT_SECRET is missing");
         AuthError::Secret(e)
     })?;
 
@@ -136,11 +138,11 @@ where
     kv.delete(&claims.jti).await.map_err(AuthError::KvStore)?;
 
     let new_access_jwt = Claims::new(Audience::Access, claims.sub.clone())
-        .encode(&jwt_secret)
+        .encode(&refresh_jwt_secret)
         .map_err(AuthError::Jwt)?;
     let new_refresh_jwt_claims = Claims::new(Audience::Refresh, claims.sub);
     let new_refresh_jwt = new_refresh_jwt_claims
-        .encode(&jwt_secret)
+        .encode(&refresh_jwt_secret)
         .map_err(AuthError::Jwt)?;
     let response = LoginResponse {
         access_token: new_access_jwt,

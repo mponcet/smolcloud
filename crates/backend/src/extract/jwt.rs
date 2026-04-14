@@ -18,8 +18,8 @@ where
         parts: &mut axum::http::request::Parts,
         bindings: &B,
     ) -> Result<Self, Self::Rejection> {
-        let jwt_secret = bindings.secret("JWT_SECRET").map_err(|e| {
-            tracing::error!("JWT_SECRET is missing");
+        let access_jwt_secret = bindings.secret("ACCESS_JWT_SECRET").map_err(|e| {
+            tracing::error!("ACCESS_JWT_SECRET is missing");
             AuthError::Secret(e)
         })?;
 
@@ -28,8 +28,8 @@ where
             && let Some((bearer, jwt)) = header.split_once(' ')
             && bearer == "Bearer"
         {
-            let claims =
-                jwt::Claims::decode(jwt, Audience::Access, &jwt_secret).map_err(AuthError::Jwt)?;
+            let claims = jwt::Claims::decode(jwt, Audience::Access, &access_jwt_secret)
+                .map_err(AuthError::Jwt)?;
             Ok(ExtractAccessToken(claims))
         } else {
             Err(AuthError::JwtNotFound)
@@ -50,8 +50,8 @@ where
         parts: &mut axum::http::request::Parts,
         bindings: &B,
     ) -> Result<Self, Self::Rejection> {
-        let jwt_secret = bindings.secret("JWT_SECRET").map_err(|e| {
-            tracing::error!("JWT_SECRET is missing");
+        let refresh_jwt_secret = bindings.secret("REFRESH_JWT_SECRET").map_err(|e| {
+            tracing::error!("REFRESH_JWT_SECRET is missing");
             AuthError::Secret(e)
         })?;
 
@@ -60,8 +60,8 @@ where
             && let Some((bearer, jwt)) = header.split_once(' ')
             && bearer.eq_ignore_ascii_case("Bearer")
         {
-            let claims =
-                jwt::Claims::decode(jwt, Audience::Refresh, &jwt_secret).map_err(AuthError::Jwt)?;
+            let claims = jwt::Claims::decode(jwt, Audience::Refresh, &refresh_jwt_secret)
+                .map_err(AuthError::Jwt)?;
             Ok(ExtractRefreshToken(claims))
         } else {
             Err(AuthError::JwtNotFound)
