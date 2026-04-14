@@ -9,10 +9,11 @@
 // 6. If R1 is reused, both R1 and R2 are invalidated. The (legitimate) client can't use R2 to
 // issue a new token pair: re-authenfication is required.
 // TODO:
-// - password hashing
 // - use a different secret for access and refresh token
 use crate::extract::jwt::ExtractRefreshToken;
 use crate::jwt::{Audience, Claims};
+use argon2::password_hash::{Encoding, PasswordHash};
+use argon2::{Argon2, PasswordVerifier};
 use bindings::{Bindings, ExposeSecret, KvError, KvPutOptionsBuilder, KvStore, SecretError};
 use models::login::{LoginRequest, LoginResponse, TokenType};
 
@@ -75,13 +76,19 @@ where
         AuthError::Secret(e)
     })?;
 
-    let (username, password) = (req.username, req.password);
-    // TODO: hash password
-    if username_secret.expose_secret() == username && password_secret.expose_secret() == password {
-        let access_jwt = Claims::new(Audience::Access, username.clone())
+    let argon2 = Argon2::default();
+    let password_hash =
+        PasswordHash::parse(password_secret.expose_secret(), Encoding::B64).unwrap();
+
+    if username_secret.expose_secret() == req.username
+        && argon2
+            .verify_password(req.password.as_bytes(), &password_hash)
+            .is_ok()
+    {
+        let access_jwt = Claims::new(Audience::Access, req.username.clone())
             .encode(&jwt_secret)
             .map_err(AuthError::Jwt)?;
-        let refresh_jwt_claims = Claims::new(Audience::Refresh, username);
+        let refresh_jwt_claims = Claims::new(Audience::Refresh, req.username);
         let refresh_jwt = refresh_jwt_claims
             .encode(&jwt_secret)
             .map_err(AuthError::Jwt)?;

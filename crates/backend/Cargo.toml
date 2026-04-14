@@ -10,6 +10,7 @@ axum = { workspace = true, features = ["json"] }
 tower-service = { workspace = true }
 jsonwebtoken = { version = "10", features = ["rust_crypto"] }
 uuid = { workspace = true, features = ["v4"] }
+argon2 = { workspace = true }
 time = { version = "0.3" }
 serde = { workspace = true }
 tracing = { workspace = true }
