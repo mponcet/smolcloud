@@ -79,7 +79,7 @@ impl<'bucket> BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<'bucket> {
         self
     }
 
-    async fn execute(self) -> Result<BucketObject, BucketError> {
+    async fn execute(self) -> Result<Option<BucketObject>, BucketError> {
         async move {
             let mut options = self.bucket.0.put(self.key, self.data);
             if let Some(custom_metadata) = self.custom_metadata {
@@ -87,11 +87,12 @@ impl<'bucket> BucketPutOptionsBuilder for CloudflarePutOptionsBuilder<'bucket> {
             }
 
             match options.execute().await {
-                Ok(object) => Ok(BucketObject {
+                Ok(Some(object)) => Ok(Some(BucketObject {
                     key: object.key(),
                     body: None,
                     custom_metadata: object.custom_metadata().ok(),
-                }),
+                })),
+                Ok(None) => Ok(None),
                 Err(e) => Err(BucketError {
                     message: "bucket put objet failed".into(),
                     source: e.into(),

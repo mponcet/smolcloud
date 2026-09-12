@@ -19,7 +19,7 @@ pub trait BucketGetOptionsBuilder {
 
 pub trait BucketPutOptionsBuilder {
     fn custom_metadata(self, metadata: HashMap<String, String>) -> Self;
-    fn execute(self) -> impl Future<Output = Result<BucketObject, BucketError>> + Send;
+    fn execute(self) -> impl Future<Output = Result<Option<BucketObject>, BucketError>> + Send;
 }
 
 pub trait BucketListOptionsBuilder {

@@ -19,9 +19,9 @@ serde = { version = "1.0" }
 argon2 = { version = "0.5" }
 uuid = { version = "1.23" }
 secrecy = { version = "0.10" }
-worker = { version = "0.7" }
-worker-sys = { version = "0.7" }
-worker-macros = { version = "0.7", features = ["http"] }
+worker = { version = "0.8" }
+worker-sys = { version = "0.8" }
+worker-macros = { version = "0.8", features = ["http"] }
 
 reqwest = { version = "0.13", features = ["json"] }
 tokio = { version = "1", features = [ "rt-multi-thread", "macros" ] }
