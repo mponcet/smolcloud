@@ -3,9 +3,9 @@ pub mod notes;
 use models::login::{LoginRequest, LoginResponse};
 use notes::NotesApi;
 
-use anyhow::Result;
-use reqwest::header::HeaderMap;
-use secrecy::SecretString;
+use anyhow::{Result, anyhow};
+use reqwest::header::{self, HeaderMap};
+use secrecy::{ExposeSecret, SecretString};
 
 #[derive(Clone)]
 pub struct BaseClient {
@@ -35,13 +35,10 @@ impl BaseClient {
             .unwrap();
 
         let http_client = reqwest::ClientBuilder::new()
-            .default_headers(HeaderMap::from_iter(
-                [(
-                    reqwest::header::AUTHORIZATION,
-                    format!("Bearer {}", response.access_token).parse().unwrap(),
-                )]
-                .into_iter(),
-            ))
+            .default_headers(HeaderMap::from_iter([(
+                header::AUTHORIZATION,
+                format!("Bearer {}", response.access_token).parse().unwrap(),
+            )]))
             .build()?;
 
         Ok(Self {
@@ -51,31 +48,30 @@ impl BaseClient {
         })
     }
 
-    // pub async fn refresh_token(&mut self) -> Result<Self> {
-    //     let response: LoginResponse = self
-    //         .http_client
-    //         .post(self.base_url.join("auth/refresh_token")?)
-    //         .json(&())
-    //         .send()
-    //         .await?
-    //         .json()
-    //         .await?;
-    //
-    //     self.refresh_token = Some(response.refresh_token.into());
-    //
-    //     self.http_client = reqwest::ClientBuilder::new()
-    //         .default_headers(HeaderMap::from_iter(
-    //             [(
-    //                 reqwest::header::AUTHORIZATION,
-    //                 HeaderValue::from_str("here will go the access token").unwrap(),
-    //             )]
-    //             .into_iter(),
-    //         ))
-    //         .build()?;
-    //
-    //     Ok(Self {
-    //     })
-    // }
+    pub async fn refresh_token(self) -> Result<Self> {
+        let refresh_token = self.refresh_token.ok_or(anyhow!("missing refresh token"))?;
+        let response: LoginResponse = self
+            .http_client
+            .post(self.base_url.join("auth/refresh_token")?)
+            .bearer_auth(refresh_token.expose_secret())
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let http_client = reqwest::ClientBuilder::new()
+            .default_headers(HeaderMap::from_iter([(
+                header::AUTHORIZATION,
+                format!("Bearer {}", response.access_token).parse().unwrap(),
+            )]))
+            .build()?;
+
+        Ok(Self {
+            http_client,
+            base_url: self.base_url,
+            refresh_token: Some(response.refresh_token.into()),
+        })
+    }
 
     pub fn notes_api(&self) -> NotesApi {
         NotesApi(self.clone())
