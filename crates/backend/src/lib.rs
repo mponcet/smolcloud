@@ -10,7 +10,7 @@ use routes::*;
 use services::notes::NoteService;
 
 use axum::Router;
-use axum::routing::{delete, get, post, put};
+use axum::routing::{any, delete, get, post, put};
 
 // async fn log_app_errors(request: Request, next: Next) -> Response {
 //     let response = next.run(request).await;
@@ -31,6 +31,8 @@ where
 {
     let note_service = NoteService::new(bindings.clone());
 
+    let index_router = Router::new().route("/", any(index::index));
+
     let auth_router = Router::new()
         .route("/login", post(auth::login::<B>))
         .route("/refresh_token", post(auth::refresh_token::<B>))
@@ -49,6 +51,7 @@ where
         .with_state(note_service);
 
     Router::new()
+        .merge(index_router)
         .nest("/auth", auth_router)
         .nest("/notes", notes_router)
 }

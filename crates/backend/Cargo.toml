@@ -17,6 +17,7 @@ tracing = { workspace = true }
 worker = { workspace = true, optional = true }
 bindings = { path = "../bindings" }
 models = { path = "../models" }
+askama = "0.16.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3"
