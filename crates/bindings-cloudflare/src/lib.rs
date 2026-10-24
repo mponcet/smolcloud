@@ -4,51 +4,40 @@ mod kv;
 pub use bindings::{SecretError, SecretFn, SecretString};
 pub use bucket::CloudflareBucket;
 pub use kv::CloudflareKv;
+use worker::Env;
 
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct CloudflareBindings {
-    inner: Arc<CloudflareBindingsInner>,
-}
-
-struct CloudflareBindingsInner {
-    r2: CloudflareBucket,
-    kv: CloudflareKv,
-    secret: Box<SecretFn>,
+    env: Arc<Env>,
 }
 
 impl CloudflareBindings {
-    pub fn new(r2: CloudflareBucket, kv: CloudflareKv, secret: Box<SecretFn>) -> Self {
-        Self {
-            inner: Arc::new(CloudflareBindingsInner::new(r2, kv, secret)),
-        }
-    }
-}
-
-impl CloudflareBindingsInner {
-    pub fn new(
-        r2: CloudflareBucket,
-        kv: CloudflareKv,
-        secret: Box<SecretFn>,
-    ) -> CloudflareBindingsInner {
-        Self { r2, kv, secret }
+    pub fn new(env: Env) -> Self {
+        Self { env: Arc::new(env) }
     }
 }
 
 impl bindings::Bindings for CloudflareBindings {
     type B = CloudflareBucket;
-    fn bucket(&self) -> &Self::B {
-        &self.inner.r2
+    fn bucket(&self, name: &str) -> Option<Self::B> {
+        self.env.bucket(name).ok().map(Into::into)
     }
 
     type K = CloudflareKv;
-    fn kv(&self) -> &Self::K {
-        &self.inner.kv
+    fn kv(&self, name: &str) -> Option<Self::K> {
+        self.env.kv(name).ok().map(Into::into)
     }
 
     fn secret(&self, name: &str) -> Result<SecretString, SecretError> {
-        (self.inner.secret)(name)
+        self.env
+            .secret(name)
+            .map(|s| SecretString::new(s.to_string().into()))
+            .map_err(|e| SecretError {
+                message: format!("failed to get secret '{name}'"),
+                source: e.into(),
+            })
     }
 }
 

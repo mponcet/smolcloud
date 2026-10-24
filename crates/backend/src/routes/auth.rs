@@ -8,6 +8,7 @@
 // 5. Refresh token R1 is invalidated (added to a blacklist).
 // 6. If R1 is reused, both R1 and R2 are invalidated. The (legitimate) client can't use R2 to
 // issue a new token pair: re-authenfication is required.
+use crate::config;
 use crate::extract::jwt::ExtractRefreshToken;
 use crate::jwt::{Audience, Claims};
 use argon2::password_hash::{Encoding, PasswordHash};
@@ -96,7 +97,9 @@ where
             .map_err(AuthError::Jwt)?;
 
         // Whitelist refresh token.
-        let kv = bindings.kv();
+        let kv = bindings
+            .kv(config::KV_NAME)
+            .expect("kv binding must configured");
         kv.put(&refresh_jwt_claims.jti, &[])
             .expiration(refresh_jwt_claims.exp)
             .execute()
@@ -121,7 +124,9 @@ pub async fn refresh_token<B>(
 where
     B: Bindings,
 {
-    let kv = bindings.kv();
+    let kv = bindings
+        .kv(config::KV_NAME)
+        .expect("kv binding must configured");
     let refresh_jwt_secret = bindings.secret("REFRESH_JWT_SECRET").map_err(|e| {
         tracing::error!("REFRESH_JWT_SECRET is missing");
         AuthError::Secret(e)

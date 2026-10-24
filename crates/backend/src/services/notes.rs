@@ -1,3 +1,4 @@
+use crate::config;
 use crate::services::error::ServiceError;
 use bindings::{
     Bindings, Bucket, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
@@ -18,7 +19,8 @@ impl<B: Bindings> NoteService<B> {
     pub async fn get(&self, id: NoteId) -> Result<Note, ServiceError> {
         let result = self
             .bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .get(&id.to_string())
             .execute()
             .await
@@ -52,7 +54,8 @@ impl<B: Bindings> NoteService<B> {
     pub async fn get_all(&self) -> Result<Vec<NoteMetadata>, ServiceError> {
         let result = self
             .bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .list()
             .include_custom_metadata()
             .execute()
@@ -80,7 +83,8 @@ impl<B: Bindings> NoteService<B> {
         let content = note.content.unwrap_or_default();
 
         self.bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .put(&id.to_string(), content.as_bytes())
             .custom_metadata(metadata.into())
             .execute()
@@ -93,7 +97,8 @@ impl<B: Bindings> NoteService<B> {
     pub async fn update(&self, id: NoteId, note: Note) -> Result<(), ServiceError> {
         if self
             .bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .head(&id.to_string())
             .await
             .map_err(ServiceError::Bucket)?
@@ -104,7 +109,8 @@ impl<B: Bindings> NoteService<B> {
 
         let metadata = NoteMetadata::new(id, note.title);
         self.bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .put(&id.to_string(), note.content.unwrap_or_default().as_bytes())
             .custom_metadata(metadata.into())
             .execute()
@@ -116,7 +122,8 @@ impl<B: Bindings> NoteService<B> {
 
     pub async fn delete(&self, id: NoteId) -> Result<(), ServiceError> {
         self.bindings
-            .bucket()
+            .bucket(config::BUCKET_NAME)
+            .expect("bucket binding must be configured")
             .delete(&id.to_string())
             .await
             .map_err(ServiceError::Bucket)?;
