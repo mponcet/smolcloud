@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="smolcloud - Notes, resources, and projects.">
+  <title id="page-title" hx-swap-oob="true">{% block title %}smolcloud{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/htmx.org@2.0.11"></script>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body data-theme="light" class="notransition">
+  <script>
+    const body = document.body;
+    const data = body.getAttribute("data-theme");
+    const initTheme = (state) => {
+      if (state === "dark") {
+        body.setAttribute("data-theme", "dark");
+      } else if (state === "light") {
+        body.removeAttribute("data-theme");
+      } else {
+        localStorage.setItem("theme", data);
+      }
+    };
+    initTheme(localStorage.getItem("theme"));
+    setTimeout(() => body.classList.remove("notransition"), 75);
+  </script>
+
+  {% include "navbar.html" %}
+
+  <div class="wrapper">
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+
+    {% include "footer.html" %}
+  </div>
+
+  <script>
+    // Theme toggle (light/dark) — uses event delegation so it survives htmx OOB swaps
+    (() => {
+      const body = document.body;
+
+      const toggleTheme = (state) => {
+        if (state === "dark") {
+          localStorage.setItem("theme", "light");
+          body.removeAttribute("data-theme");
+        } else if (state === "light") {
+          localStorage.setItem("theme", "dark");
+          body.setAttribute("data-theme", "dark");
+        } else {
+          initTheme(state);
+        }
+      };
+
+      // Event delegation: listen on document, check if click was on #mode
+      document.addEventListener("click", (e) => {
+        if (e.target.closest("#mode")) {
+          toggleTheme(localStorage.getItem("theme"));
+        }
+      });
+
+      // Blur the content when the mobile menu is open
+      document.addEventListener("change", (e) => {
+        if (e.target.id === "menu-trigger") {
+          const area = document.querySelector(".wrapper");
+          e.target.checked
+            ? area.classList.add("blurry")
+            : area.classList.remove("blurry");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
