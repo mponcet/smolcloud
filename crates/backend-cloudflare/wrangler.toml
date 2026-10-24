@@ -7,9 +7,9 @@ command = "cargo install -q \"worker-build@^0.8\" && worker-build --release"
 watch_dir = ["../backend", "../bindings", "../bindings-cloudflare", "../models"]
 
 [[r2_buckets]]
-binding = "mybucket"
-bucket_name = "mybucket"
+binding = "bucket"
+bucket_name = "bucket"
 
 [[kv_namespaces]]
-binding = "mykv"
-id = "mykv"
+binding = "auth"
+id = "7fe46f77dc604658b2fd6d2ea5b27bff"
