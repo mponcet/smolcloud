@@ -2774,6 +2774,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "webdav-backend"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bindings",
+ "tower-service",
+ "tracing",
+ "worker",
+]
+
+[[package]]
+name = "webdav-cloudflare"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "bindings-cloudflare",
+ "time",
+ "tower-service",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-web",
+ "webdav-backend",
+ "worker",
+ "worker-macros",
+]
+
+[[package]]
 name = "webpki-root-certs"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
