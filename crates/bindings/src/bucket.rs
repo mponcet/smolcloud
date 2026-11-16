@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::future::Future;
-use std::ops::Range;
 
 use thiserror::Error;
 
@@ -12,8 +11,22 @@ pub struct BucketError {
     pub source: anyhow::Error,
 }
 
+pub enum BucketRange {
+    Start {
+        start: u64,
+    },
+    /// Range 0-499 will request 500 bytes
+    RangeInclusive {
+        start: u64,
+        end: u64,
+    },
+    Suffix {
+        suffix: u64,
+    },
+}
+
 pub trait BucketGetOptionsBuilder {
-    fn range(self, range: Range<usize>) -> Self;
+    fn range(self, range: BucketRange) -> Self;
     fn execute(self) -> impl Future<Output = Result<Option<BucketObject>, BucketError>> + Send;
 }
 
@@ -80,3 +93,4 @@ pub trait Bucket: Send + Sync {
 //         (*self).list()
 //     }
 // }
+//

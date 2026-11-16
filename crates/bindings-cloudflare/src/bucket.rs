@@ -1,6 +1,6 @@
 use bindings::{
     Bucket, BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
-    BucketPutOptionsBuilder,
+    BucketPutOptionsBuilder, BucketRange,
 };
 
 use std::collections::HashMap;
@@ -11,30 +11,34 @@ use worker::send::IntoSendFuture;
 struct CloudflareGetOptionsBuilder<'bucket> {
     bucket: &'bucket CloudflareBucket,
     key: String,
-    range: Option<std::ops::Range<usize>>,
+    range: Option<worker::Range>,
 }
 
 pub struct CloudflareBucket(pub worker::Bucket);
 
 impl<'bucket> BucketGetOptionsBuilder for CloudflareGetOptionsBuilder<'bucket> {
-    fn range(mut self, range: std::ops::Range<usize>) -> Self {
-        self.range = Some(range);
+    fn range(mut self, range: BucketRange) -> Self {
+        self.range = match range {
+            BucketRange::Start { start } => Some(worker::Range::OffsetToEnd { offset: start }),
+            // length would overflow
+            BucketRange::RangeInclusive { start, end }
+                if end.checked_sub(start).unwrap_or(u64::MAX) == u64::MAX =>
+            {
+                None
+            }
+            BucketRange::RangeInclusive { start, end } => Some(worker::Range::OffsetWithLength {
+                offset: start,
+                length: end - start + 1,
+            }),
+            BucketRange::Suffix { suffix } => Some(worker::Range::Suffix { suffix }),
+        };
         self
     }
 
     async fn execute(self) -> Result<Option<BucketObject>, BucketError> {
         let mut options = self.bucket.0.get(self.key);
         if let Some(range) = self.range {
-            // FIXME: invalid range
-            options = options.range(
-                worker_sys::R2Range {
-                    offset: Some(range.start as f64),
-                    length: Some(range.end.saturating_sub(range.start) as f64),
-                    suffix: None,
-                }
-                .try_into()
-                .expect("range bound should be checked at creation"),
-            );
+            options = options.range(range);
         }
 
         async move {

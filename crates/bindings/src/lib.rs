@@ -4,7 +4,7 @@ mod secret;
 
 pub use bucket::{
     Bucket, BucketError, BucketGetOptionsBuilder, BucketListOptionsBuilder, BucketObject,
-    BucketPutOptionsBuilder,
+    BucketPutOptionsBuilder, BucketRange,
 };
 pub use kv::{KvError, KvPutOptionsBuilder, KvStore};
 pub use secret::{SecretError, SecretFn};
